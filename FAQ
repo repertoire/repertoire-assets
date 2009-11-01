@@ -24,6 +24,13 @@ application.js:
 ...
 
 
+Q. Can I use repertoire-assets together with merb-assets?
+
+A. Yes.  It replaces merb-asset's bundling and javascript/stylesheet helpers,
+but the remaining helpers can be used with assets from either the main app or
+assets in gems.  (See below.)
+
+
 Q. Why do gem assets appear mixed into the same url space?  Wouldn't it be
 better to namespace them by the gem's name?
 

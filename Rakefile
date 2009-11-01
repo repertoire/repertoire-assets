@@ -4,8 +4,8 @@ require 'rake/gempackagetask'
 require 'merb-core'
 require 'merb-core/tasks/merb'
 
-GEM_NAME = "repertoire-gem-assets"
-GEM_VERSION = "0.0.1"
+GEM_NAME = "repertoire-assets"
+GEM_VERSION = "0.1.0"
 AUTHOR = "Your Name"
 EMAIL = "Your Email"
 HOMEPAGE = "http://merbivore.com/"
@@ -23,10 +23,9 @@ spec = Gem::Specification.new do |s|
   s.author = AUTHOR
   s.email = EMAIL
   s.homepage = HOMEPAGE
-  s.add_dependency('merb-core', '>= 1.1')
+  s.add_dependency('rack')
   s.require_path = 'lib'
-  s.files = %w(LICENSE README Rakefile TODO) + Dir.glob("{lib,spec}/**/*")
-  
+  s.files = %w(LICENSE README Rakefile TODO) + Dir.glob("{lib,spec,templates,vendor}/**/*")
 end
 
 Rake::GemPackageTask.new(spec) do |pkg|
