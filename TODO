@@ -1,0 +1,7 @@
+- write method to copy over cached files
+- write method to preprocess/require a source file  DONE
+- write method to css insert a source file          DONE
+- yui compress the cached files
+
+- write a merb-specific adapter that reads options appropriately
+- optimise the code

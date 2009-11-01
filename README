@@ -1,0 +1,6 @@
+repertoire-gem-assets
+=====================
+
+- use Repertoire:RackAssets in config.ru and rack.rb
+- set up prefix path
+- set up precaching in production environment
