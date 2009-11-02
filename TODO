@@ -1,10 +1,10 @@
 - write method to copy over cached files            DONE
 - write method to preprocess/require a source file  DONE
 - write method to css insert a source file          DONE
-- yui compress the cached files
+- yui compress the cached files                     DONE
+- convert to using a manifest instead of includes   DONE
+- helpers for generating the manifests  DONE
 
-- convert to using a manifest instead of includes  DONE
-
+- try running in an actual app
 - write a merb-specific adapter that reads options appropriately
 - optimise the code
-- helpers for generating the manifests  DONE

@@ -1,3 +1,11 @@
+Repertoire Assets FAQ
+=====================
+
+Q. My application produces the following error: "Controller class not found for controller `manifest'"
+
+A. You have not installed the Rack middleware in your application's rackup file.  Consult the README.
+
+
 Q. My HTML looks like the following, but the middleware is not expanding
 javascript require statements.
 

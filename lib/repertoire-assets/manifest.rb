@@ -23,7 +23,7 @@ module Repertoire
         @processor = processor
         
         manifest_erb = File.read(TEMPLATE_PATH)
-        @template    = ERB.new(manifest_erb)
+        @template    = ERB.new(manifest_erb, nil, '-')
       
         precache! if @processor.options[:precache]
       end

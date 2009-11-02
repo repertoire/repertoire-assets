@@ -26,6 +26,29 @@ spec = Gem::Specification.new do |s|
   s.add_dependency('rack')
   s.require_path = 'lib'
   s.files = %w(LICENSE README Rakefile TODO) + Dir.glob("{lib,spec,templates,vendor}/**/*")
+  s.post_install_message = <<-POST_INSTALL_MESSAGE
+#{'*'*50}
+
+  One of your gems uses Repertoire asset support, which runs as rack middleware in front of a
+  Merb or Rails application.
+  
+  In order to run, make sure your config.ru or config/init.ru files load the middleware, e.g.:
+
+  ...
+  use Repertoire::Assets::Middleware::Merb
+  ...
+    
+  Immediately before the final run statement.  Also, you may want to turn on asset bundling and
+  compression in your production environment (config/environments/production.rb):
+  
+  ...  
+  c[:precache] = :compress
+  ...  
+  
+  See the package documentation for other application-level configuration options.
+  
+#{'*'*50}
+POST_INSTALL_MESSAGE
 end
 
 Rake::GemPackageTask.new(spec) do |pkg|

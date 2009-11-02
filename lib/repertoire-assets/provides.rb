@@ -6,7 +6,7 @@ module Repertoire
   module Assets
     
     # 
-    # Rack middleware to serve provided files
+    # Rack middleware to serve provided files from gem roots
     #
     class Provides
     

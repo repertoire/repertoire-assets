@@ -3,15 +3,15 @@
 require "gems/environment"
 
 require 'pathname'
-require 'lib/repertoire-assets'
 require 'merb-core'
 
 infinity = lambda {|env| [200, {"Content-Type" => "text/html"}, env.inspect]}
 
 use Merb::Rack::PathPrefix, '/facets'
 
-options = { :precache => :compress }
+require 'lib/repertoire-assets'
 
+options = { :precache => :compress }
 processor = Repertoire::Assets::Processor.new options
 use Repertoire::Assets::Manifest, processor
 use Repertoire::Assets::Provides, processor
