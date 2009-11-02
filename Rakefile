@@ -23,7 +23,8 @@ spec = Gem::Specification.new do |s|
   s.author = AUTHOR
   s.email = EMAIL
   s.homepage = HOMEPAGE
-  s.add_dependency('rack')
+  s.add_dependency('rack', '~>1.0.1')
+  s.add_dependency('nokogiri', '~>1.4.0')
   s.require_path = 'lib'
   s.files = %w(LICENSE README Rakefile TODO) + Dir.glob("{lib,spec,templates,vendor}/**/*")
   s.post_install_message = <<-POST_INSTALL_MESSAGE

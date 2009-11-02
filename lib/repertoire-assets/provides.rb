@@ -20,11 +20,11 @@ module Repertoire
         @delegate  = delegate
         @processor = processor
       
-        precache! if @processor.options[:precache]
+        precache! if precache_assets?
       end
 
       def call(env)
-        response = unless @processor.options[:precache]
+        response = unless precache_assets?
           dup._call(env)
         end
 
@@ -38,10 +38,10 @@ module Repertoire
           cache_path = Pathname.new(root + uri)
           next if uri[PRECACHE_EXCLUDE] || cache_path == path
           
-          @processor.logger.info "Caching #{uri} to #{cache_path}"
-          
           FileUtils.mkdir_p cache_path.dirname  if !cache_path.dirname.directory?
           FileUtils.cp      path, cache_path    if path.file? && !cache_path.file?
+          
+          @processor.logger.info "Cached #{uri} to #{cache_path}"
         end
       end
     
@@ -69,6 +69,12 @@ module Repertoire
             yield part
           end
         end
+      end
+      
+      protected
+      
+      def precache_assets?
+        @processor.options[:precache]
       end
     end
   end

@@ -3,8 +3,21 @@
 - write method to css insert a source file          DONE
 - yui compress the cached files                     DONE
 - convert to using a manifest instead of includes   DONE
-- helpers for generating the manifests  DONE
+- helpers for generating the manifests              NOT TO DO
+- try running in an actual app                      DONE
+- check digesting                                   DONE
+- verify works with prefix_path 					DONE
 
-- try running in an actual app
-- write a merb-specific adapter that reads options appropriately
+- check runs unbundled
+- production environment to disable processor & provider after cache phase
+- when caching, stat mtimes first (multiple merbs)
+- convert to use nokogiri SAX
+
+- write a merb-specific rack that reads options appropriately
+- gems should be able to register their own load_paths
+- make log output pretty
 - optimise the code
+- documentation
+- provisions for digesting and compressing css
+- combine middleware?
+- test suite?
