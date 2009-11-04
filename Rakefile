@@ -5,7 +5,7 @@ require 'merb-core'
 require 'merb-core/tasks/merb'
 
 GEM_NAME = "repertoire-assets"
-GEM_VERSION = "0.1.0"
+GEM_VERSION = "0.1.1"
 AUTHOR = "Your Name"
 EMAIL = "Your Email"
 HOMEPAGE = "http://merbivore.com/"
@@ -28,27 +28,31 @@ spec = Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.files = %w(LICENSE README Rakefile TODO) + Dir.glob("{lib,spec,templates,vendor}/**/*")
   s.post_install_message = <<-POST_INSTALL_MESSAGE
-#{'*'*50}
-
-  One of your gems uses Repertoire asset support, which runs as rack middleware in front of a
-  Merb or Rails application.
+#{'*'*80}
+  One of your gems uses Repertoire asset support, which provides access to
+  javascript, stylesheets and or others assets distributed via Rubygems.
   
-  In order to run, make sure your config.ru or config/init.ru files load the middleware, e.g.:
+  Rack middleware serves assets in front of your Merb or Rails application,
+  and includes <script> and <link> tags in the header automatically.
+  
+  (1) Make sure your application loads the middleware. e.g. for Merb:
 
-  ...
-  use Repertoire::Assets::Middleware::Merb
-  ...
+      <app>/config/init.ru (Mongrel)
+      <app>/config.ru      (Passenger) 
     
-  Immediately before the final run statement.  Also, you may want to turn on asset bundling and
-  compression in your production environment (config/environments/production.rb):
+      require 'repertoire-assets'
+      use Repertoire::Assets::Processor, Merb::Config, Merb.logger
+      run Merb::Rack::Application.new
+
+  (2) Turn on precaching and compression in your production environment,
+      so gem assets are served by your web server. e.g. for Merb:
+    
+      <app>/config/environments/production.rb:
+    
+      c[:compress_assets] = true
   
-  ...  
-  c[:precache] = :compress
-  ...  
-  
-  See the package documentation for other application-level configuration options.
-  
-#{'*'*50}
+  See the repertoire-assets README for details.
+#{'*'*80}
 POST_INSTALL_MESSAGE
 end
 

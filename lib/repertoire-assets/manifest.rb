@@ -13,30 +13,63 @@ module Repertoire
     #
     class Manifest
       
-      DIGEST_URI          = '/js_digest.js'
-      COMPRESSOR_PATH     = Pathname.new(__FILE__).dirname + '../../vendor/yuicompressor-2.4.2.jar'
-      COMPRESSOR_CMD      = "java -jar #{COMPRESSOR_PATH} --type js --charset utf-8"
+      DIGEST_URI      = '/digest'            # basename for compressed and bundled asset files
+      
+      COMPRESSOR_PATH = Pathname.new(__FILE__).dirname + '../../vendor/yuicompressor-2.4.2.jar'
+      COMPRESSOR_CMD  = "java -jar #{COMPRESSOR_PATH} --type %s --charset utf-8"
     
-      def initialize(delegate, processor)
+    
+      # Initialize the rack manifest middleware.
+      #
+      # === Parameters
+      # :delegate:: 
+      #    The next rack app in the filter chain
+      # :processor::
+      #    The Repertoire Assets processor singleton
+      # :options:: 
+      #    Hash of configuration options
+      # :logger:: 
+      #    Framework's logger - defaults to STDERR
+      #
+      # ---
+      def initialize(delegate, processor, options, logger=nil)
         @delegate  = delegate
         @processor = processor
-      
-        precache! if precache_manifest?
+        @options   = options
+        @logger    = logger || Logger.new(STDERR)
       end
 
+
+      # The core rack call to filter an http request. If the wrapped application
+      # returns an html page, the manifest is converted to <script> and <link>
+      # tags and interpolated into the <head>.
+      #
+      # For the middleware's purposes, an "html page" is
+      #
+      # (1) mime-type "text/html"
+      # (2) contains a <head> element (i.e. not an ajax html fragment)
+      #
+      # Currently, html manipulation is done by constructing a DOM with nokogiri.
+      #
+      # In the future, an evented system similar to SAX will be used for greater
+      # throughput.  Regexp manipulation is not an option since many html documents
+      # contain "<head>" as quoted HTML in the body.
+      #
+      # ---
       def call(env)
-        # get application's respose
+        # get application's response
         status, headers, body = @delegate.call(env)
         
+        # only reference manifest in html files
         if /^text\/html/ === headers["Content-Type"]
-          # application returned html: parse and inspect
-          dom  = Nokogiri::HTML(body.to_s)
+          uri  = Rack::Utils.unescape(env["PATH_INFO"])
+          dom  = Nokogiri::HTML(join(body))
           head = dom.css('head').children
-          
+
+          # do not try to add manifest to html fragments
           unless head.empty?
-            # complete html page: interpolate manifest
-            @processor.logger.debug "Interpolating manifest into #{Rack::Utils.unescape(env["PATH_INFO"])}"
-                        
+            @logger.debug "Interpolating manifest into #{Rack::Utils.unescape(env["PATH_INFO"])}"
+
             head.before(html_manifest)
             body = dom.to_html
           end
@@ -45,19 +78,48 @@ module Repertoire
         [status, headers, body]
       end
       
+      
+      # Utility to join rack-style returned content
+      #
+      # ---
+      def join(content)
+        content.inject("") { |res, c| res << c; res }
+      end
+      
+      
+      # Construct an HTML fragment containing <script> and <link> tags corresponding
+      # to the asset files in the manifest.
+      #
+      # To speed loading, css files are listed at the top.  Javascript files are listed
+      # in order of their dependency requirements.  Because browsers block javascript
+      # execution during the evaluation of a <script> element, the files will load in
+      # appropriate order.
+      #
+      # If the :precache_assets option is selected, javascript and css will already
+      # exist in a digest at the application public root.  In this case, we only 
+      # generate a single <script> and <link> for each digest file.
+      #
+      # ---- Returns
+      #    A string containing the HTML fragment.
+      #
+      # ---
       def html_manifest
         html = []
-        manifest = @processor.manifest
-          
-        # output css links first since they load asynchronously
-        manifest.grep(/\.css$/).each do |uri|
-          html << "<link rel='stylesheet' type='text/css' href='#{path_prefix}#{uri}'/>"
-        end
-        
-        # output script requires in dependency order
-        if precache_manifest?
-          html << "<script language='javascript' type='text/javascript' src='#{path_prefix}#{DIGEST_URI}'></script>"
+        path_prefix = @options[:path_prefix] || ''
+
+        # reference digest files when caching
+        if @options[:precache_assets]
+          html << "<link rel='stylesheet' type='text/css' href='#{path_prefix}#{DIGEST_URI}.css'/>"
+          html << "<script language='javascript' type='text/javascript' src='#{path_prefix}#{DIGEST_URI}.js'></script>"
         else
+          manifest = @processor.manifest
+          
+          # output css links first since they load asynchronously
+          manifest.grep(/\.css$/).each do |uri|
+            html << "<link rel='stylesheet' type='text/css' href='#{path_prefix}#{uri}'/>"
+          end
+          
+          # script requires load synchronously, in order of dependencies
           manifest.grep(/\.js$/).each do |uri|
             html << "<script language='javascript' type='text/javascript' src='#{path_prefix}#{uri}'></script>"
           end
@@ -66,67 +128,119 @@ module Repertoire
         html.join("\n")
       end
       
+      
+      # Collect all of the required js and css files from their current locations
+      # in gems and bundle them together into digest files stored at the application
+      # public root.  Thereafter, the web server will serve them directly.
+      #
+      # If the :compress_assets option is on, the YUI compressor is run on the
+      # digest files.
+      #
+      # Urls in CSS files are rewritten to account for the file's new URI.
+      # 
+      # ---
       def precache!
-        root = Pathname.new(@processor.options[:app_asset_root]).realpath.to_s
-        cache_path = root + DIGEST_URI
+        root     = Pathname.new( @options[:app_asset_root] ).realpath
+        rewrites = {}
         
-        File.open(cache_path, 'w') do |f| 
-          f.write(javascript_digest)
-        end
-
-        @processor.logger.info "Cached javascript digest to #{cache_path}"
-      end
-      
-      def javascript_digest
-        manifest = @processor.manifest
-        result   = ""
-        
-        # interpolate javascript files if bundling or compressing
-        if precache_manifest?
-          javascripts = manifest.grep(/\.js$/)
-          javascripts.each do |uri|
-            path = @processor.provided[uri]
-            result << "\n// #{path}\n"
-            result << File.read(path)
+        precache_by_type(root, 'css') do |uri, code| 
+          # rewrite urls in css files from digest's uri at root
+          code.gsub(/url\(([^)]*)\)/) do
+            (rewrites[uri] ||= []) << $1
+            "url(%s)" % (Pathname.new(uri).dirname + $1).cleanpath
           end
-          manifest -= javascripts
         end
+        precache_by_type(root, 'js')
         
-        # use yui compressor if requested
-        result = compress(result) if precache_manifest? == :compress
+        rewrites.each { |uri, rewritten| @logger.info "Rewrote #{ rewritten.size } urls in #{ uri }" }
+        @logger.info "Cached digests to #{ root }#{DIGEST_URI}.(js|css)"
+      end
+      
+      
+      private
+      
+      def precache_by_type(root, type, &block)
+        digest   = Pathname.new("#{root}#{DIGEST_URI}.#{type}")
+        uris     = @processor.manifest.grep(/\.#{type}$/)
+        provided = @processor.provided
           
-        result          
-      end
+        # N.B. application servers often start many processes simultaneously
+        #      only first process will write the digests since it keeps files open
+        return if digest.exist? && !digest.zero? && !@processor.stale?(digest.mtime)
 
-      protected
+        File.open(digest, 'w') do |f|
+          bundled = Manifest.bundle(uris, provided) do |*args|
+            yield(*args) if block_given?
+          end
+          bundled = Manifest.compress(bundled, type, @logger) if @options[:compress_assets]
+          f.write(bundled)
+        end
+      end    
+    
+    
+      class << self
       
-      def path_prefix
-        @processor.options[:path_prefix] || ''
-      end
-      
-      def precache_manifest?
-        @processor.options[:precache]
-      end
+        # Bundle all of the provided files of a given type into a single
+        # string.  If a block is given, file contents are yielded to it.
+        #
+        # In the future, this will return a stream.
+        #
+        # ==== Parameters
+        # ::uris:
+        #    The processor's manifest of uris for a given type, in order
+        # ::provided:
+        #    The processor's hash of provided uri -> path pairs
+        #
+        # ==== Returns
+        #  The bundled files, as a string.
+        # ---
+        def bundle(uris, provided, &block)
+          result = ""
+          uris.map do |uri|
+            path     = provided[uri]
+            contents = File.read(path)
+            contents = yield(uri, contents) || contents if block_given?
             
-      def compress(source)
-        stream = StringIO.new(source)
-        Open3.popen3(COMPRESSOR_CMD) do |stdin, stdout, stderr|
-          begin
-            while buffer = stream.read(4096)
-              stdin.write(buffer)
-            end
-            stdin.close
-            compressed = stdout.read
-            raise "No result" if compressed.length == 0
-            @processor.logger.info "Javascript digest compression %i%% to (%ik)" % 
-                                   [ 100.0 * (source.length - compressed.length) / source.length, compressed.length / 1024 ]
-            return compressed
-          rescue Exception => e
-            @processor.logger.warn("Could not YUI compress: #{e.message} (using #{COMPRESSOR_CMD})")
-            @processor.logger.warn(stderr.read)
-            @processor.logger.warn("Reverting to uncompressed digest")
-            return source
-          end            
+            result << "/* File: #{path} */\n"
+            result << contents
+            result << "\n\n"
+          end
+        
+          result
+        end
+      
+    
+        # Utility compress files using YUI compressor.
+        #
+        # ==== Parameters
+        # ::source:
+        #    The code to be compressed
+        # ::type:
+        #    The type - js or css
+        #
+        # ==== Returns
+        #  The compressed code, or source if compression failed
+        # ---
+        def compress(source, type, logger)
+          stream = StringIO.new(source)
+          Open3.popen3(COMPRESSOR_CMD % type) do |stdin, stdout, stderr|
+            begin
+              while buffer = stream.read(4096)
+                stdin.write(buffer)
+              end
+              stdin.close
+              compressed = stdout.read
+              raise "No result" if compressed.length == 0
+              logger.info "Digest #{type} compression %i%% to (%ik)" % 
+                                     [ 100.0 * (source.length - compressed.length) / source.length, compressed.length / 1024 ]
+              return compressed
+            rescue Exception => e
+              logger.warn("Could not compress: #{e.message} (using #{COMPRESSOR_CMD})")
+              logger.warn(stderr.read)
+              logger.warn("Reverting to uncompressed digest")
+              return source
+            end            
+          end
         end
       end
     end

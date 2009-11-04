@@ -1,0 +1,19 @@
+Repertoire Assets
+=================
+
+(1) Make sure your application loads the middleware. e.g. for Merb:
+
+    <app>/config/init.ru (Mongrel)
+    <app>/config.ru      (Passenger) 
+  
+    require 'repertoire-assets'
+    use Repertoire::Assets::Processor, Merb::Config, Merb.logger
+    
+    run Merb::Rack::Application.new
+
+(2) Turn on precaching and compression in your production environment,
+    so gem assets are served by your web server. e.g. for Merb:
+  
+    <app>/config/environments/production.rb:
+  
+    c[:compress_assets] = true

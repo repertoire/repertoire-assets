@@ -1,6 +1,51 @@
-repertoire-assets
-=====================
+Repertoire Assets 
+=================
 
-- use Repertoire:RackAssets in config.ru and rack.rb
-- set up prefix path
-- set up precaching in production environment
+Repertoire Assets is software for developing and distributing Javascript and
+CSS components for re-use in ruby web projects. It helps you manage large
+javascript codebases by dividing code among many files, and allows you to
+publish your javascript libraries (and their css and images) via ruby gems.
+You can then require them in other javascript web applications, and the asset
+software will manage any dependencies among the libraries so that you can
+focus on writing your own code.
+
+While you're developing, the Repertoire middleware ensures that any javascript
+and css you've required appear seamlessly in your own application's url space
+- even though they're loaded from elsewhere. You can step through javascript
+code file by file, just as it appears in your application and gems. When a
+javascript source file changes, it is reloaded automatically and its
+dependencies re-analyzed.
+
+Finally, when you have packaged your app for production use, the asset
+software bundles and compresses javascripts and stylesheets, and copies any
+associated binary assets into your application's public directory. This way,
+all the assets will be served directly by your web server, only one compressed
+javascript and one css file are downloaded to the client. This yields a much
+more responsive user experience.
+
+
+The software consists of two components:
+
+(1) A preprocessor that assembles javascript based on dependencies in your
+code, much like C's #include directive or ruby's "require" method. For
+example, you could require the "shapes" javascript library from a ruby gem by
+including '//= require <shapes>' your javascript source. The preprocessor will
+find the library and load it and its depedencies into your web page before
+your own code, in the proper order. If a given code library has already been
+sourced, it is not loaded again.
+
+This is accomplished by compiling an ordered manifest of all the javascript
+files required by your code, and then inserting the appropriate <script> and
+<link> tags into your pages' html. Because it uses a rack filter, the system
+is largely transparent to your application. Whether it's written in Merb,
+Rails, Sinatra, or another ruby web framework, the javascript and css will
+still work.
+
+
+(2) A pair of rack filters: one that intercepts http requests for assets in
+the manifest and serves them directly, and another that inserts the manifest
+into html pages right before they are served. In a production environment, the
+filters collect all of your application's required assets, compress those they
+can, and cache them in your application's public asset directory.
+
+

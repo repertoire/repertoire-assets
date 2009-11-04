@@ -1,32 +1,3 @@
-
-      TEMPLATES = <<-JAVASCRIPT
-/* Repertoire gem assets utility functions */
-repertoire = repertoire || {}      
-repertoire.require = repertoire.require || {}
-repertoire.require.css = function(href) {
-  var link = document.createElement("link");
-  link.type = "text/css"; 
-  link.rel = "stylesheet"; 
-  link.href = href;
-  document.getElementsByTagName("head")[0].appendChild(link);
-}
-repertoire.require.css = function(src) {
-  var script = document.createElement("script");
-  script.type = "text/javascript";
-  script.language = "javascript"; 
-  script.src = src;
-  document.getElementsByTagName("head")[0].appendChild(script);
-}
-/* end gem asset functions */
-JAVASCRIPT
-
-
-def contains_path?(parent, child)
-!child.relative_path_from(parent).to_s.include?('..')
-end
-
-
-
 /* Repertoire gem assets manifest file */
 (function() {
   
@@ -75,3 +46,10 @@ end
   
   while (list.length > 0) { /* block until loads finish */ }
 })();
+
+
+
+
+Possible regexp for matching HTML documents 
+
+/(\s*<\s*!DOCTYPE[^>]*>)?\s*<\s*HTML[^>]*>\s*<\s*HEAD[^>]*>/i

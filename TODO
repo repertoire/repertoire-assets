@@ -3,21 +3,30 @@
 - write method to css insert a source file          DONE
 - yui compress the cached files                     DONE
 - convert to using a manifest instead of includes   DONE
-- helpers for generating the manifests              NOT TO DO
+- helpers for generating the manifests              NOT NECESSARY
 - try running in an actual app                      DONE
 - check digesting                                   DONE
 - verify works with prefix_path 					DONE
+- check runs unbundled                              DONE
+- provisions for digesting and compressing css      DONE
+- gems should be able to register their own load_paths  DONE
+- when caching, stat mtimes first (multiple merbs)  DONE
+- write a merb-specific rack for options            NOT NECESSARY
+- combine middleware?                               DONE
+- separate out cache?                               NOT TO DO
+- convert to use nokogiri SAX                       NOT POSSIBLE
+- convert to use regexp                             DONE
+- make log output pretty                            DONE
+- optimise checking if update needed on cache       DONE
+- clean task?                                       NOT TO DO
+- option to disable manifester & provider           DONE
+- improve configuration param names                 DONE
+- avoid multiple processes compressing digest       DONE
+- optimise the code                                 DONE
+- in code documentation                             DONE
 
-- check runs unbundled
-- production environment to disable processor & provider after cache phase
-- when caching, stat mtimes first (multiple merbs)
-- convert to use nokogiri SAX
+- README
 
-- write a merb-specific rack that reads options appropriately
-- gems should be able to register their own load_paths
-- make log output pretty
-- optimise the code
-- documentation
-- provisions for digesting and compressing css
-- combine middleware?
-- test suite?
+- test suite?                                       NOT FOR NOW
+- find streaming XML module for manifest filter     NOT FOR NOW
+- convert to simplest regexp that fit HTML 4.0 DTD

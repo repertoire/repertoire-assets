@@ -1,35 +1,44 @@
 Repertoire Assets FAQ
 =====================
 
-Q. My application produces the following error: "Controller class not found for controller `manifest'"
+Q. My application complains that it cannot find libxml.so.
 
-A. You have not installed the Rack middleware in your application's rackup file.  Consult the README.
+A. Repertoire assets uses nokogiri, a ruby wrapper for libxml.  To install 
+libxml using macports: 'port install libxml2'.
+
+
+
+Q. If I use repertoire-assets for all of my javascript and css, none of my
+html templates have <script...> or <link...>!
+
+A. Yes, exactly.
+
+
+
+Q. My application is not loading javascript or css files.  There is nothing
+about them in the log.
+
+A. You have not installed the Rack middleware in your application's rackup
+file. Consult the README.
+
 
 
 Q. My HTML looks like the following, but the middleware is not expanding
 javascript require statements.
 
-index.html:
-...
 <script language='javascript'>
 //- require <jquery>
 //- require <widgets>
 </script>
-...
 
 A. require and require instructions are only preprocessed in free-standing
 javascript files. Instead, use:
 
-index.html:
-...
-<script language='javascript' src='application.js'></script>
-...
-
-application.js:
+public/javascripts/application.js:
 ...
 //- require <jquery>
 //- require <widgets>
-...
+
 
 
 Q. Can I use repertoire-assets together with merb-assets?
@@ -37,6 +46,7 @@ Q. Can I use repertoire-assets together with merb-assets?
 A. Yes.  It replaces merb-asset's bundling and javascript/stylesheet helpers,
 but the remaining helpers can be used with assets from either the main app or
 assets in gems.  (See below.)
+
 
 
 Q. Why do gem assets appear mixed into the same url space?  Wouldn't it be
@@ -48,3 +58,18 @@ were '<host app>/public/images/foo/bar.png'.
 
 This way, existing img_tag and other helpers in merb/rails can be used 
 with assets pulled from gems.
+
+
+
+Q. I want to bundle different sets of javascript and css for different pages,
+or different browsers.
+
+A. This was considered, but isn't implemented.  Issue a feature request.
+
+
+Q. Repertoire assets seems like sprockets or juicer.  How is it different?
+
+A. Only Repertoire assets addresses distributing javascript and css via
+rubygems. Its syntax is borrowed from sprockets, but it has better css support
+than sprockets, and better provisions for debugging than either since you can
+develop on unbundled source files.
