@@ -1,18 +1,15 @@
 require 'rubygems'
 require 'rake/gempackagetask'
 
-require 'merb-core'
-require 'merb-core/tasks/merb'
-
 GEM_NAME = "repertoire-assets"
 GEM_VERSION = "0.1.1"
-AUTHOR = "Your Name"
-EMAIL = "Your Email"
-HOMEPAGE = "http://merbivore.com/"
-SUMMARY = "Merb plugin that provides ..."
+AUTHOR = "Christopher York"
+EMAIL = "yorkc@mit.edu"
+HOMEPAGE = "http://hyperstudio.mit.edu"
+SUMMARY = "Repertoire Assets javascript and css distribution framework"
 
 spec = Gem::Specification.new do |s|
-  s.rubyforge_project = 'merb'
+  s.rubyforge_project = 'repertoire'
   s.name = GEM_NAME
   s.version = GEM_VERSION
   s.platform = Gem::Platform::RUBY
@@ -24,7 +21,6 @@ spec = Gem::Specification.new do |s|
   s.email = EMAIL
   s.homepage = HOMEPAGE
   s.add_dependency('rack', '~>1.0.1')
-  s.add_dependency('nokogiri', '~>1.4.0')
   s.require_path = 'lib'
   s.files = %w(LICENSE README Rakefile TODO) + Dir.glob("{lib,spec,templates,vendor}/**/*")
   s.post_install_message = <<-POST_INSTALL_MESSAGE
@@ -58,16 +54,6 @@ end
 
 Rake::GemPackageTask.new(spec) do |pkg|
   pkg.gem_spec = spec
-end
-
-desc "install the plugin as a gem"
-task :install do
-  Merb::RakeHelper.install(GEM_NAME, :version => GEM_VERSION)
-end
-
-desc "Uninstall the gem"
-task :uninstall do
-  Merb::RakeHelper.uninstall(GEM_NAME, :version => GEM_VERSION)
 end
 
 desc "Create a gemspec file"

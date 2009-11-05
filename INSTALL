@@ -6,8 +6,8 @@ Repertoire Assets
     <app>/config/init.ru (Mongrel)
     <app>/config.ru      (Passenger) 
   
-    require 'repertoire-assets'
-    use Repertoire::Assets::Processor, Merb::Config, Merb.logger
+*    require 'repertoire-assets'
+*    use Repertoire::Assets::Processor, Merb::Config, Merb.logger
     
     run Merb::Rack::Application.new
 
@@ -16,4 +16,4 @@ Repertoire Assets
   
     <app>/config/environments/production.rb:
   
-    c[:compress_assets] = true
+*    c[:compress_assets] = true

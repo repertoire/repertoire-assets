@@ -5,9 +5,9 @@ module Repertoire
       attr_accessor :manifest, :provided
 
       DEFAULT_OPTIONS = {
-        :precache_assets => nil,
-        :compress_assets => nil,
-        :disable_assets  => nil,
+        :precache_assets     => nil,
+        :compress_assets     => nil,
+        :disable_rack_assets => nil,
         
         :path_prefix     => '',
         
@@ -39,7 +39,7 @@ module Repertoire
       #
       #   :precache_assets [false]                   # copy and bundle assets into host application?
       #   :compress_assets [false]                   # compress bundled javascript & stylesheets? (implies :precache)
-      #   :disable_assets  [false]                   # don't interpolate <script> and <link> tags (implies :precache)
+      #   :disable_rack_assets [false]               # don't interpolate <script> and <link> tags (implies :precache)
       #   :path_prefix     ['']                      # prefix for all generated urls
       #  
       # For other very rarely used configuration options, see the source.
@@ -72,7 +72,7 @@ module Repertoire
       # ---
       def call(env)
         delegate = case
-          when @options[:disable_assets]  then @app              # ignore all asset middleware
+          when @options[:disable_rack_assets]  then @app              # ignore all asset middleware
           when @options[:precache_assets] then @manifester       # use manifest middleware only
           else                                 
             reset! if stale?                                     
@@ -100,7 +100,7 @@ module Repertoire
         
         @manifest_timestamp = mtime
         
-        @logger.info "Assets processed: %i source files, %i libraries available, %i assets provided, %i files in manifest" % 
+        @logger.info "Assets processed: %i source files, %i libraries available, %i assets provided, %i required files in manifest" % 
           [ source_files.size, libraries.size, @provided.size, @manifest.size ]
       end
 
@@ -235,7 +235,7 @@ module Repertoire
       #    The logging indent level (for pretty-printing)
       #
       # ---
-      def requires(path, indent=0)
+      def requires(path, level=0)
         @manifest ||= []
         @provided ||= {}
         uri         = uri(path)
@@ -243,10 +243,10 @@ module Repertoire
         # only expand each source file once
         return if @manifest.include?(uri)
         
-        @logger.debug "Requiring #{'  '*indent + uri} (#{Processor.pretty_path(path)})"
+        @logger.debug "Requiring #{'  '*level + uri} (#{Processor.pretty_path(path)})"
       
         # preprocess directives in the file recursively
-        preprocess(path, indent+1)
+        preprocess(path, level+1)
         
         # add file after those it requires and register it as provided for http access
         @manifest << uri
@@ -273,11 +273,11 @@ module Repertoire
       #    The logging indent level (for pretty-printing)
       #
       # ---       
-      def provides(path, indent=0)
+      def provides(path, level=0)
         @provided ||= {}
         uri         = uri(path)
         
-        @logger.debug "Providing #{'  '*indent + uri} (#{Processor.pretty_path(path)})"
+        @logger.debug "Providing #{'  '*level + uri} (#{Processor.pretty_path(path)})"
         
         path.find do |sub|
           @provided[ uri(sub) ] = sub if sub.file?
@@ -292,38 +292,95 @@ module Repertoire
       #
       # ==== Parameters
       # :path<Pathname>:: the path of the javascript file
-      # :indent<Integer>:: the logging indent level (for pretty-printing)
+      # :level<Integer>:: the recursion level (for pretty-printing & errors)
       #
       # ==== Raises
-      # UnknownAssetError::
+      # :UnknownAssetError::
       #   No file could be found for the given asset name
+      # :UnknownDirectiveError::
+      #   An unknown processing directive was given
       #
-      # --- 
-      def preprocess(path, indent=0)
+      # ---
+      def preprocess(path, level=0)
         line_num = 1
         path.each_line do |line|
-          
-          # //= require <foo>
-          if lib = line[/^\s*\/\/=\s+require\s+<(.*?)>\s*$/, 1]
-            p = Processor.path_lint(libraries[lib], lib, path, line_num)
-            requires(p, indent)
-            
-          # //= require "foo" or //= require "foo.css"
-          elsif subpath = line[/^\s*\/\/=\s+require\s+\"(.*?)\"\s*$/, 1]
-            subpath += '.js' unless subpath[/\.\w+$/]
-            p = Processor.path_lint(path.dirname + subpath, subpath, path, line_num)
-            requires(p, indent)
-            
-          # //= provide "../assets"
-          elsif subpath = line[/^\s*\/\/=\s+provide\s+\"(.*?)\"\s*$/, 1]
-            p = Processor.path_lint(path.dirname + subpath, subpath, path, line_num)
-            provides(p, indent)
+          begin
+            # process any directives on line
+            directive(path.dirname, line, level)
+          rescue Error => e
+            @logger.error "Could not process '#{line.chomp}' (%s, line %i)" % [path, line_num]
+            error_status
+            raise e.message
           end
-          
           line_num += 1
         end
       end
       
+      # Preprocess any directive on a single line.  The file spec is progressively 
+      # expanded, as follows.
+      #
+      #   (1) <library> and <library/sublibrary> are dereferenced
+      #   (2) "relative/file" is expanded based on the current working directory
+      #   (3) globs are expanded (see Ruby Dir[])
+      #   (4) the default extension (.js) is checked
+      #   (5) finally, 'requires' or 'provides' are called on any resulting files
+      #
+      # ==== Parameters
+      # :cwd::
+      #   The current working directory (for relative paths)
+      # :line::
+      #   The line to process
+      # :level::
+      #   The recursion level (for pretty-printing)
+      #
+      # ==== Raises
+      # :UnknownAssetError::
+      #   The path does not refer to any existing file
+      # :UnknownDirectiveError::
+      #   The line specified an unknown preprocessing directive
+      #
+      # ---
+      def directive(cwd, line, level=0)
+        # extract the preprocessing directive
+        return unless line[ %r{^\s*//=\s*(\w+)\s+(".+"|<.+>)\s*$} ]
+        directive, pathspec = $1, $2
+      
+        # progressively expand path specification
+        pathlist = pathspec
+
+        # expand library and sublibrary references
+        pathlist.gsub!( %r{^<([^/>]*)/?(.*)>} ) do
+          libname, sublib = $1, $2
+          unless libpath = libraries[libname]
+            raise UnknownAssetError, libname
+          end
+          sublib.length > 0 ? libpath.dirname + sublib : libpath.to_s
+        end
+
+        # expand relative references
+        pathlist.gsub!( %r{"(.*)"} ) do
+          subpath = $1
+          cwd + subpath
+        end
+      
+        # expand globs & default extension, match existing files
+        pathlist = Dir[ pathlist, pathlist + '.js' ]        
+        pathlist.reject! { |p| File.directory?(p) }
+      
+        # handle missing asset
+        raise UnknownAssetError, pathspec if pathlist.empty?
+      
+        # perform directive over matches
+        pathlist.each do |p|
+          p = Pathname.new(p)
+          case directive
+          when 'require' then requires(p, level)
+          when 'provide' then provides(p, level)
+          else 
+            raise UnknownDirectiveError, directive
+          end
+        end
+      end
       
       # Locate the enclosing gem asset root and construct a relative uri to path
       #
@@ -338,7 +395,60 @@ module Repertoire
         '/' + path.relative_path_from(root).to_s
       end
       
-  
+    
+      # Check path references a valid set of files and give sensible error 
+      # messages to locate the problem if not.  If successful, each path is
+      # yielded in turn.
+      #
+      # ==== Parameters
+      # :path::
+      #   The pathname to check
+      # :identifier::
+      #   The reference the user supplied to identify the file
+      # :source_file::
+      #   The filename the reference occurred in
+      # :line_num::
+      #   The line number of the occurrence
+      # :&block::
+      #   Block to run on all successful matches
+      #
+      # ==== Raises
+      # UnknownAssetError::
+      #   The path does not refer to an existing file
+      #
+      # ---
+      def path_lint(path, identifier, source_file, line_num, &block)
+        matches = if !path
+          []
+        elsif path.readable?
+          [ path ]
+        else
+          Dir[ path ]
+        end
+        
+        if matches.size > 0
+          matches.each { |p| yield p }
+        else
+          @logger.error "Could not resolve #{identifier} #{ '(%s, line %i)' % [source_file, line_num]  if source_file && line_num }"
+          error_status
+          raise UnknownAssetError
+        end
+      end
+      
+      # Log the processor's status to error
+      #
+      # ---
+      def error_status
+        lib_patterns  = @options[:gem_libraries].map { |p| "$LOAD_PATH/#{p}" }
+        root_patterns = @options[:gem_asset_roots].map { |p| "$LOAD_PATH/#{p}" }
+        
+        @logger.error "Known libraries [ %s ]: %s" % 
+                      [ lib_patterns.join(", "), libraries.keys.sort.join(", ") ]
+        @logger.error "Asset roots     [ %s ]:\n%s" % 
+                      [ root_patterns.join(", "), asset_roots.sort.join("\n") ]
+      end
+      
+      
       class << self
       
         # Sanity check for configurations
@@ -395,32 +505,6 @@ module Repertoire
           end
 
           paths.compact
-        end
-        
-      
-        # Check path references a valid file and give sensible error messages to
-        # locate it if not.
-        #
-        # ==== Parameters
-        # :path::
-        #   The pathname to check
-        # :identifier::
-        #   The reference the user supplied to identify the file
-        # :source_file::
-        #   The filename the reference occurred in
-        # :line_num::
-        #   The line number of the occurrence
-        #
-        # ==== Raises
-        # UnknownAssetError::
-        #   The path does not refer to an existing file
-        #
-        # ---
-        def path_lint(path, identifier, source_file, line_num)
-          unless path && path.readable?
-            raise UnknownAssetError, "Could not resolve '#{identifier}' #{ ("(%s, line %i)" % [source_file, line_num]) if source_file && line_num }"
-          end
-          return path
         end
       
         # Extract a javascript library name from its complete path.  As for ruby 

@@ -5,13 +5,13 @@ Gem::Specification.new do |s|
   s.version = "0.1.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Your Name"]
-  s.date = %q{2009-11-03}
-  s.description = %q{Merb plugin that provides ...}
-  s.email = %q{Your Email}
+  s.authors = ["Christopher York"]
+  s.date = %q{2009-11-05}
+  s.description = %q{Repertoire Assets javascript and css distribution framework}
+  s.email = %q{yorkc@mit.edu}
   s.extra_rdoc_files = ["README", "LICENSE", "TODO"]
-  s.files = ["LICENSE", "README", "Rakefile", "TODO", "lib/repertoire-assets", "lib/repertoire-assets/exceptions.rb", "lib/repertoire-assets/manifest.rb", "lib/repertoire-assets/processor.rb", "lib/repertoire-assets/provides.rb", "lib/repertoire-assets.rb", "vendor/yuicompressor-2.4.2.jar"]
-  s.homepage = %q{http://merbivore.com/}
+  s.files = ["LICENSE", "README", "Rakefile", "TODO", "lib/repertoire-assets", "lib/repertoire-assets/exceptions.rb", "lib/repertoire-assets/manifest.rb", "lib/repertoire-assets/processor.rb", "lib/repertoire-assets/provides.rb", "lib/repertoire-assets.rb", "templates/Rakefile", "vendor/yuicompressor-2.4.2.jar"]
+  s.homepage = %q{http://hyperstudio.mit.edu}
   s.post_install_message = %q{********************************************************************************
   One of your gems uses Repertoire asset support, which provides access to
   javascript, stylesheets and or others assets distributed via Rubygems.
@@ -28,7 +28,7 @@ Gem::Specification.new do |s|
       use Repertoire::Assets::Processor, Merb::Config, Merb.logger
       run Merb::Rack::Application.new
 
-  (2) Turn on precaching and compression in your production environment
+  (2) Turn on precaching and compression in your production environment,
       so gem assets are served by your web server. e.g. for Merb:
     
       <app>/config/environments/production.rb:
@@ -39,9 +39,9 @@ Gem::Specification.new do |s|
 ********************************************************************************
 }
   s.require_paths = ["lib"]
-  s.rubyforge_project = %q{merb}
+  s.rubyforge_project = %q{repertoire}
   s.rubygems_version = %q{1.3.5}
-  s.summary = %q{Merb plugin that provides ...}
+  s.summary = %q{Repertoire Assets javascript and css distribution framework}
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
@@ -49,13 +49,10 @@ Gem::Specification.new do |s|
 
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<rack>, ["~> 1.0.1"])
-      s.add_runtime_dependency(%q<nokogiri>, ["~> 1.4.0"])
     else
       s.add_dependency(%q<rack>, ["~> 1.0.1"])
-      s.add_dependency(%q<nokogiri>, ["~> 1.4.0"])
     end
   else
     s.add_dependency(%q<rack>, ["~> 1.0.1"])
-    s.add_dependency(%q<nokogiri>, ["~> 1.4.0"])
   end
 end

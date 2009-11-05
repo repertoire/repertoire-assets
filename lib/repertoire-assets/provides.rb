@@ -82,18 +82,14 @@ module Repertoire
         @processor.provided.each do |uri, path|
           next if uri[PRECACHE_EXCLUDE]
           cache_path = Pathname.new("#{root}#{uri}")
-
-          FileUtils.mkdir_p cache_path.dirname  if !cache_path.dirname.directory?
-          FileUtils.cp      path, cache_path    if newer?(path, cache_path)
-
-          @logger.info "Cached #{uri} (#{Processor.pretty_path(path)})"
+          
+          if !cache_path.exist? || path.mtime > cache_path.mtime
+            FileUtils.mkdir_p cache_path.dirname if !cache_path.dirname.directory?
+            FileUtils.cp      path, cache_path    
+            @logger.info "Cached #{uri} (#{Processor.pretty_path(path)})"
+          end
         end
-      end
-      
-      def newer?(path1, path2)
-        path1.exist? && path2.exist? && path1.mtime > path2.mtime
-      end
-        
+      end        
     end
   end
 end

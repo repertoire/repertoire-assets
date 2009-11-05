@@ -53,3 +53,33 @@
 Possible regexp for matching HTML documents 
 
 /(\s*<\s*!DOCTYPE[^>]*>)?\s*<\s*HTML[^>]*>\s*<\s*HEAD[^>]*>/i
+
+
+
+path = case pathspec
+when %r{^"(.*?)?(\.js|\.css)?"$}         then path.dirname  + $1 + ($3 || '.js')
+when %r{^<([^/>]*)(.*?)?(\.js|\.css)?>$} then libraries[$1] + $2 + ($3 || '.js')
+else raise PreprocessingError, "Unkown path format: #{pathspec}"
+
+
+
+
+
+
+# //= require <foo>
+if [lib, subpath] = line[/^\s*\/\/=\s+require\s+<([^/>]*)(/[^>]*)?>\s*$/, 1]
+  path_lint(libraries[lib] + subpath, "<#{lib}>", path, line_num) do |p|
+    requires(p, indent)
+  end
+# //= require "foo" or //= require "foo.css"
+elsif subpath = line[/^\s*\/\/=\s+require\s+\"(.*?)\"\s*$/, 1]
+  subpath += '.js' unless subpath[/\.(js|css)$/]
+  path_lint(path.dirname + subpath, "\"#{subpath}\"", path, line_num) do |p| 
+    requires(p, indent)
+  end
+# //= provide "../assets"
+elsif subpath = line[/^\s*\/\/=\s+provide\s+\"(.*?)\"\s*$/, 1]
+  path_lint(path.dirname + subpath, "\"#{subpath}\"", path, line_num) do |p|
+    provides(p, indent)
+  end
+end

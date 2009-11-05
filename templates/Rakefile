@@ -1,0 +1,37 @@
+# Example template for a Repertoire Assets javascript gem library
+# Modify as necessary and run 'rake gemspec' to generate your own gemspec
+
+
+require 'rubygems'
+require 'rake/gempackagetask'
+
+GEM_NAME = "superdraw"
+GEM_VERSION = "1.3.2"
+AUTHOR = "Christopher York"
+EMAIL = "yorkc@mit.edu"
+HOMEPAGE = "http://hyperstudio.mit.edu"
+SUMMARY = "Hyperstudio distro of superdraw javascript library"
+
+spec = Gem::Specification.new do |s|
+  s.rubyforge_project = 'repertoire'
+  s.name = GEM_NAME
+  s.version = GEM_VERSION
+  s.platform = Gem::Platform::RUBY
+  s.has_rdoc = true
+  s.extra_rdoc_files = ["README", "LICENSE", "TODO"]
+  s.summary = SUMMARY
+  s.description = s.summary
+  s.author = AUTHOR
+  s.email = EMAIL
+  s.homepage = HOMEPAGE
+  s.add_dependency('repertoire-assets', '~>0.1.0')
+  s.require_path = 'lib'
+  s.files = %w(LICENSE README Rakefile TODO) + Dir.glob("{public,lib}/**/*")
+end
+
+desc "Create a gemspec file"
+task :gemspec do
+  File.open("#{GEM_NAME}.gemspec", "w") do |file|
+    file.puts spec.to_ruby
+  end
+end

@@ -1,9 +1,10 @@
 require 'pathname'
 require 'rack/utils'
 
-require 'nokogiri'
 require 'stringio'
 require 'open3'
+
+# require 'nokogiri'
 
 module Repertoire
   module Assets
@@ -18,6 +19,9 @@ module Repertoire
       COMPRESSOR_PATH = Pathname.new(__FILE__).dirname + '../../vendor/yuicompressor-2.4.2.jar'
       COMPRESSOR_CMD  = "java -jar #{COMPRESSOR_PATH} --type %s --charset utf-8"
     
+      # regular expression for HTML 4.0 DTD through the HTML & HEAD elements
+      HTML_HEAD       = /^(\s*<\s*!DOCTYPE[^>]*>)?\s*<\s*HTML[^>]*>\s*<\s*HEAD[^>]*>/im
+      HEADER_BUFFER   = 300                  # upper length limit for HTML_HEAD
     
       # Initialize the rack manifest middleware.
       #
@@ -57,35 +61,67 @@ module Repertoire
       #
       # ---
       def call(env)
+        dup._call(env)
+      end
+      
+      def _call(env)
         # get application's response
         status, headers, body = @delegate.call(env)
         
         # only reference manifest in html files
         if /^text\/html/ === headers["Content-Type"]
-          uri  = Rack::Utils.unescape(env["PATH_INFO"])
-          dom  = Nokogiri::HTML(join(body))
-          head = dom.css('head').children
-
-          # do not try to add manifest to html fragments
-          unless head.empty?
-            @logger.debug "Interpolating manifest into #{Rack::Utils.unescape(env["PATH_INFO"])}"
-
-            head.before(html_manifest)
-            body = dom.to_html
-          end
+          # for html & html fragments, attempt to interpolate manifest
+          @path_info = Rack::Utils.unescape(env["PATH_INFO"])
+          @body, body = body, self
         end
         
         [status, headers, body]
       end
-      
-      
-      # Utility to join rack-style returned content
+
+
+      # Apply a simple stream-based html 'filter parser' that conforms to the 
+      # HTML 4.0 DTD to the client application's output, interpolating the html 
+      # manifest into ^<doctype...>?<html...><head> (if it occurs within the first 
+      # HEADER_BUFFER characters).
+      #
+      # HTML fragments are passed through unchanged.
       #
       # ---
-      def join(content)
-        content.inject("") { |res, c| res << c; res }
+      def each(&block)
+        #
+        # N.B. Processing HTML using regular expressions is notoriously error-prone.
+        #      However, after much consideration I decided that conforming to the 
+        #      HTML 4.0 DTD through <html><head> was sufficiently simple, and the 
+        #      alternatives of SAX and DOM too heavy weight for use server-side on
+        #      every outgoing HTML page.  For posterity, however, here is the code
+        #      written in nokogiri and DOM:
+        #        
+        #      dom  = Nokogiri::HTML(body.to_s)
+        #      head = dom.css('head').children
+        #      unless head.empty?
+        #        head.before(html_manifest)
+        #        body = dom.to_html
+        #      end
+        #      
+        prefix = ""
+        @body.each do |chunk|
+          if prefix == nil                       # already interpolated manifest
+            yield chunk
+          elsif prefix.size < HEADER_BUFFER      # collecting enough data to interpolate manifest
+            prefix << chunk
+          else                                   # attempt to interpolate one time only
+            # regular expression will match only "complete" html 4.0 documents
+            # fragments and all others will pass through unchanged
+            prefix.gsub!(HTML_HEAD) do |head|
+              @logger.debug "Interpolating manifest into #{@path_info}"
+              "#{head}#{html_manifest}"
+            end
+            yield prefix
+            prefix = nil                      # done interpolating
+          end
+        end
       end
-      
+
       
       # Construct an HTML fragment containing <script> and <link> tags corresponding
       # to the asset files in the manifest.
@@ -116,18 +152,30 @@ module Repertoire
           
           # output css links first since they load asynchronously
           manifest.grep(/\.css$/).each do |uri|
-            html << "<link rel='stylesheet' type='text/css' href='#{path_prefix}#{uri}'/>"
+            html << "<link rel='stylesheet' type='text/css' href='#{path_prefix}#{cache_bust uri}'/>"
           end
           
           # script requires load synchronously, in order of dependencies
           manifest.grep(/\.js$/).each do |uri|
-            html << "<script language='javascript' type='text/javascript' src='#{path_prefix}#{uri}'></script>"
+            html << "<script language='javascript' type='text/javascript' src='#{path_prefix}#{cache_bust uri}'></script>"
           end
         end
         
         html.join("\n")
       end
       
+      
+      # Generate a URL with the file's modification time appended.  This makes browsers reload when a
+      # static asset changes.
+      #
+      # ---- Returns
+      #    A string containing the complete uri
+      #
+      # ---      
+      def cache_bust(uri)
+        mtime = @processor.provided[uri].mtime.to_i
+        "#{uri}?#{mtime}"
+      end
       
       # Collect all of the required js and css files from their current locations
       # in gems and bundle them together into digest files stored at the application

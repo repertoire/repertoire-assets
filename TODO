@@ -6,10 +6,10 @@
 - helpers for generating the manifests              NOT NECESSARY
 - try running in an actual app                      DONE
 - check digesting                                   DONE
-- verify works with prefix_path 					DONE
+- verify works with prefix_path 					          DONE
 - check runs unbundled                              DONE
 - provisions for digesting and compressing css      DONE
-- gems should be able to register their own load_paths  DONE
+- gems should be able to register their own load_paths  NOT NECESSARY
 - when caching, stat mtimes first (multiple merbs)  DONE
 - write a merb-specific rack for options            NOT NECESSARY
 - combine middleware?                               DONE
@@ -24,9 +24,11 @@
 - avoid multiple processes compressing digest       DONE
 - optimise the code                                 DONE
 - in code documentation                             DONE
-
-- README
-
+- dump load path when cannot resolve a dependency   DONE
+- support for //= require <jquery/ui/accordion>     DONE
+- support for //= require "foo/*.js" (globs)        DONE
 - test suite?                                       NOT FOR NOW
 - find streaming XML module for manifest filter     NOT FOR NOW
-- convert to simplest regexp that fit HTML 4.0 DTD
+- convert to simplest regexp that fit HTML 4.0 DTD  DONE
+- asset-gen binary                                  NOT FOR NOW
+- README                                            DONE
