@@ -354,7 +354,12 @@ module Repertoire
           unless libpath = libraries[libname]
             raise UnknownAssetError, libname
           end
-          sublib.length > 0 ? libpath.dirname + sublib : libpath.to_s
+          # distinguish library and sublibraries
+          if sublib.empty?
+            libpath.to_s
+          else
+            libpath.dirname + libname + sublib
+          end
         end
 
         # expand relative references

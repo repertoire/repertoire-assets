@@ -32,3 +32,9 @@
 - convert to simplest regexp that fit HTML 4.0 DTD  DONE
 - asset-gen binary                                  NOT FOR NOW
 - README                                            DONE
+
+- provision for http://foo.com in require?
+
+- source files should not be libraries				DONE
+- README needs info on bundling/gem requires
+- README needs note on empty ruby libary file		DONE	
