@@ -193,7 +193,8 @@ module Repertoire
         
         precache_by_type(root, 'css') do |uri, code| 
           # rewrite urls in css files from digest's uri at root
-          code.gsub(/url\(([^)]*)\)/) do
+          # see http://www.w3.org/TR/CSS21/syndata.html#uri
+          code.gsub(/url\(\s*['"]?(.*?)['"]?\s*\)/) do
             (rewrites[uri] ||= []) << $1
             "url(%s)" % (Pathname.new(uri).dirname + $1).cleanpath
           end
