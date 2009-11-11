@@ -196,13 +196,12 @@ module Repertoire
           # see http://www.w3.org/TR/CSS21/syndata.html#uri
           code.gsub(/url\(\s*['"]?(.*?)['"]?\s*\)/) do
             (rewrites[uri] ||= []) << $1
-            "url(%s)" % (Pathname.new(uri).dirname + $1).cleanpath
+            "url(%s%s)" % [ @options[:path_prefix], (Pathname.new(uri).dirname + $1).cleanpath ]
           end
         end
         precache_by_type(root, 'js')
         
         rewrites.each { |uri, rewritten| @logger.info "Rewrote #{ rewritten.size } urls in #{ uri }" }
-        @logger.info "Cached digests to #{ root }#{DIGEST_URI}.(js|css)"
       end
       
       
@@ -223,6 +222,7 @@ module Repertoire
           end
           bundled = Manifest.compress(bundled, type, @logger) if @options[:compress_assets]
           f.write(bundled)
+          @logger.info "Cached #{digest}"
         end
       end    
     
