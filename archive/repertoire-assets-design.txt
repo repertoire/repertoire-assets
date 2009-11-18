@@ -1,0 +1,133 @@
+getting links into html:
+
+(1) * replace path_prefix in the javascript file
+    * use jquery to load css dynamically
+
+    + self-contained: no css refs necessary outside of module
+    - requires patching or post-processing sprockets
+    - code to load css is ugly
+    -> experiment.  doesn't work.  asynchronous load for ajax script elements means can't enforce dependencies
+
+(2) * helper to generate link element that matches all css files in asset paths
+    
+    + follows standard practice: script/links at top of page
+    - loads all css regardless of whether its wanted
+
+(3) * do nothing
+
+    - requires user to know which modules are in play (even sub-dependencies)
+    - requires base css files to follow standard format
+
+(4) * write own appender that matches and concatenates css
+    * only assets are binary files
+
+(5) * extend/replace sprocket
+    * insert css files into js at dependency-resolve time
+
+    + handles bundling problem
+
+
+
+ideal solution:
+
+# rack app matches all eventual top-level directories in <app>/public and attempts to serve them
+
+requirements: 		the structure of the public directory in the gems should be logically coherent
+					(i.e. assets' relative positions should be correct; urls should make sense as relative paths)
+					javascript and css should always be able to reference their relative components by known urls
+					[ e.g. '../images/<module>/circle.png' ]
+					
+					allow user to continue with merb-assets helpers:   e.g. img_tag, link_to
+
+//= require <foo>           # means search first level of load path for named js file and insert it and dependencies
+//= require "file"          # means search relative to the current file: for including sub-dependencies
+
+# N.B. provide stems paths from the current file's root and reproduces it in the cache
+
+//= provide "../stylesheets/foo/foo.css"    # means insert css file and its dependencies
+//= provide "../images/foo"                 # means copy over entire directory into <root_public>/images  (NOT <root_public>/)
+
+repertoire_widgets-0.0.1/public/javascripts/rep.widgets.js					# publicly visible
+repertoire_widgets-0.0.1/public/javascripts/rep.widgets/triangle.js			# not publicly visible          //= require "rep.widgets/triangle"
+
+repertoire_widgets-0.0.1/public/stylesheets/rep.widgets.css                 # lands in the global css file
+repertoire_widgets-0.0.1/public/stylesheets/rep.widgets/triangle.css        #                               @include 'rep.widgets/triangle.css'
+
+< reference to an asset in a css file: url(../images/rep.widgets/blue_circle.png) >
+
+repertoire_widgets-0.0.1/public/images/blue_circle.png                      # copied to <root_public>/bundled/<module>/images/blue_circle.png
+                                                                              
+																			  routed to http://<server>/<path_prefix>/bundled/<module>
+
+bundled.js
+bundled.css < actually just a list of @import to top-level provided css >
+
+//= require <jquery>
+//= provide "../stylesheets/rep_widgets/default.css"
+//= provide "../images/rep_widgets"
+
+<module>/public/stylesheets/widgets_default.css
+
+DIFFERENCES TO SPROCKETS:
+
+provide "foo/bar/baz" creates all intervening directories also
+provide "foo.css" declares the css should be top-level
+
+DESIGN GOALS:
+
+- serve javascript, css, and assets out of any gem in the load path  [ allows us to use bundler to resolve version #s and dependencies ]
+- required/included js files are bundled in correct order, once only
+
+- at development-time, rack plugin captures and serves any assets not in the public dir
+- at production-time, the rack plugin bundles files and copies them to the public dir
+
+- support path_prefix
+
+IMPLEMENTATION:
+
+- preprocess all files on first access
+  [ -> lets us know which public app dirs to shadow ]
+
+- require <foo>: search load paths for named file with same suffix as current file
+- provide <foo>: invalid
+
+why not just write a rack app that intercepts anything with the proper suffix / mime type, finds & expands it, if caching minifies and copies it?
+
+e.g. request for '/facets/javascripts/application.js'
+webserver passes it on since not in public dir
+rack app matches it since request for javascript
+looks in search path for it, locates at <foo>/app/javascripts/application.js     [ if not found, passes on to merb ]
+reads in line-by-line... for each require it repeats the process and inserts the text, caching the result in memory
+... stores the provides urls as it encounters them
+... e.g. while processing require 'rep.widgets', encounters 'provide "../stylesheets/rep.widgets/default.css"'
+... stores pathname to file in hash by url 
+
+finally sends back bundled file
+
+then e.g. request for '/facets/stylesheets/rep.widgets/default.css'
+matches to prior // - provide "../stylesheets/rep.widgets/default.css"
+serves up file from bookmarked filesystem path
+not caching so doesn't write to main application filesystem
+
+ALGORITHM:
+
+* register all e.g. $LOAD_PATH/public/ as endpoints
+* in rack handler
+  * for url matching e.g. $PREFIX_PATH/foo/bar where foo/bar exists in some endpoint
+    * if suffix is marked for expansion (js/css)
+(a)   * if not already interpolated <endpoint>/foo/bar
+        * for each line in <endpoint>/foo/bar
+          * match //- require <baz>|"baz"
+            * if <baz> & exists <another_endpoint>/(javascripts|stylesheets)/baz.(current_ext)
+              or "baz" & exists <this_endpoint>/baz.(current_ext)
+              * recurse to (a) and interpolate result
+          * match //- provide "baz.css"
+          	* push url for baz.css onto stack of stylesheets and pass up
+          * else pass line through
+    * else load file from <endpoint>/foo/bar
+    * if caching
+      * pass through yui compressor
+      * write to e.g. <app>/public/foo/bar
+    * serve result via rack
+* else pass to merb or rails
+

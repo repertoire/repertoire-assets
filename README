@@ -10,8 +10,8 @@ software will manage any dependencies among the libraries so that you can
 focus on writing your own code.
 
 While you're developing, the Repertoire middleware ensures that any javascript
-and css you've required appear seamlessly in your own application's url space
-- even though they're loaded from elsewhere. You can step through javascript
+and css you've required appear seamlessly in your own application's url space--
+even though they're loaded from elsewhere. You can step through javascript
 code file by file, just as it appears in your application and gems. When a
 javascript source file changes, it is reloaded automatically and its
 dependencies re-analyzed.
@@ -179,7 +179,7 @@ Unix-style file globs can be used in any require or provide statement, as seen
 in the final provide statement above. Also, you can combine search and
 relative file paths to load sub-libraries (e.g. 'require <superdraw/circle>').
 
-Keep in mind that everything under /public will appear in your host app's URL
+Keep in mind that files under /public may appear in your host app's URL
 space. Hence, it is advantageous to namespace your materials in directories
 named after your library (e.g. /images/superdraw/circle.png rather than
 /images/circle.png).
@@ -187,7 +187,7 @@ named after your library (e.g. /images/superdraw/circle.png rather than
 For security reasons, the system will never serve a file that was not
 explicitly required or provided.
 
-A template for your own gems' Rakefile is distributed in
+A template for your own gems' Rakefile, based on jeweler, is distributed in
 repertoire-assets/templates/Rakefile.  Copy it out and modify as necessary.
 
 
