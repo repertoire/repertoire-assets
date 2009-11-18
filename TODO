@@ -1,3 +1,5 @@
+- tainted files need to check css
+
 - write method to copy over cached files            DONE
 - write method to preprocess/require a source file  DONE
 - write method to css insert a source file          DONE
