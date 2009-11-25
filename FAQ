@@ -1,13 +1,6 @@
 Repertoire Assets FAQ
 =====================
 
-Q. My application complains that it cannot find libxml.so.
-
-A. Repertoire assets uses nokogiri, a ruby wrapper for libxml.  To install 
-libxml using macports: 'port install libxml2'.
-
-
-
 Q. If I use repertoire-assets for all of my javascript and css, none of my
 html templates have <script...> or <link...>!
 

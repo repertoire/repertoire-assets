@@ -53,11 +53,8 @@ module Repertoire
       # (1) mime-type "text/html"
       # (2) contains a <head> element (i.e. not an ajax html fragment)
       #
-      # Currently, html manipulation is done by constructing a DOM with nokogiri.
-      #
-      # In the future, an evented system similar to SAX will be used for greater
-      # throughput.  Regexp manipulation is not an option since many html documents
-      # contain "<head>" as quoted HTML in the body.
+      # Currently, html manipulation is done using a simple HTML 4.0-compliant
+      # filter parser.  It is simple and quite efficient.
       #
       # ---
       def call(env)
