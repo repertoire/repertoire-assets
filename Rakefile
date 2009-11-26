@@ -1,7 +1,7 @@
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |s|
-    s.name = "rep.jquery"
+    s.name = "repertoire-assets"
     s.summary = "Repertoire Assets javascript and css distribution framework"
     s.description = "Repertoire Assets javascript and css distribution framework"
     s.email = "yorkc@mit.edu"
