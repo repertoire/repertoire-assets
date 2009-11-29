@@ -1,3 +1,5 @@
+require 'pathname'
+
 dir = Pathname(__FILE__).dirname.expand_path + 'repertoire-assets'
 
 require dir + 'exceptions'

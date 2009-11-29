@@ -1,4 +1,5 @@
 require 'pathname'
+require 'logger'
 require 'rack/utils'
 require 'fileutils'
 
@@ -77,7 +78,7 @@ module Repertoire
       #
       # ---
       def precache!
-        root = Pathname.new( @options[:app_asset_root] ).realpath
+        root = Pathname.new( @options[:cache_root] ).realpath
 
         @processor.provided.each do |uri, path|
           next if uri[PRECACHE_EXCLUDE]

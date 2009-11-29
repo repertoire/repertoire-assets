@@ -1,4 +1,5 @@
 require 'pathname'
+require 'logger'
 require 'rack/utils'
 
 require 'stringio'
@@ -13,9 +14,7 @@ module Repertoire
     # Rack middleware to construct, interpolate, and cache js + css manifests
     #
     class Manifest
-      
-      DIGEST_URI      = '/digest'            # basename for compressed and bundled asset files
-      
+
       COMPRESSOR_PATH = Pathname.new(__FILE__).dirname + '../../vendor/yuicompressor-2.4.2.jar'
       COMPRESSOR_CMD  = "java -jar #{COMPRESSOR_PATH} --type %s --charset utf-8"
     
@@ -142,8 +141,9 @@ module Repertoire
 
         # reference digest files when caching
         if @options[:precache_assets]
-          html << "<link rel='stylesheet' type='text/css' href='#{path_prefix}#{DIGEST_URI}.css'/>"
-          html << "<script language='javascript' type='text/javascript' src='#{path_prefix}#{DIGEST_URI}.js'></script>"
+          digest_uri = "#{path_prefix}#{@options[:digest_basename]}"
+          html << "<link rel='stylesheet' type='text/css' href='#{digest_uri}.css'/>"
+          html << "<script language='javascript' type='text/javascript' src='#{digest_uri}.js'></script>"
         else
           manifest = @processor.manifest
           
@@ -185,7 +185,7 @@ module Repertoire
       # 
       # ---
       def precache!
-        root     = Pathname.new( @options[:app_asset_root] ).realpath
+        root     = Pathname.new( @options[:cache_root] ).realpath
         rewrites = {}
         
         precache_by_type(root, 'css') do |uri, code| 
@@ -205,7 +205,7 @@ module Repertoire
       private
       
       def precache_by_type(root, type, &block)
-        digest   = Pathname.new("#{root}#{DIGEST_URI}.#{type}")
+        digest   = Pathname.new(root) + "#{@options[:digest_basename]}.#{type}"
         uris     = @processor.manifest.grep(/\.#{type}$/)
         provided = @processor.provided
           

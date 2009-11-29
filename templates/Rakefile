@@ -10,9 +10,16 @@ begin
     s.email = "yorkc@mit.edu"
     s.homepage = "http://hyperstudio.mit.edu"
     s.authors = ["Christopher York"]
-    s.add_dependency('repertoire-assets', '~>0.1.0')
+    s.add_dependency('repertoire-assets', '~>0.1.4')
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError
   puts "Jeweler not available. Install it with: sudo gem install jeweler"
+end
+
+begin
+  require 'repertoire-assets'
+  Repertoire::Assets::Tasks.new(:gem_excludes => [])            # list any libraries to distribute separately here
+rescue LoadError
+  puts "Repertoire assets not available.  Install it with: sudo gem install repertoire-assets"
 end

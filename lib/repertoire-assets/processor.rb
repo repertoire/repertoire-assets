@@ -1,3 +1,5 @@
+require 'logger'
+
 module Repertoire
   module Assets
     class Processor
@@ -9,15 +11,17 @@ module Repertoire
         :compress_assets     => nil,
         :disable_rack_assets => nil,
         
-        :path_prefix     => '',
-        
-        :app_asset_root  => 'public',                # app directory where assets are served from
+        :path_prefix     => '',                      # prefix to add before all urls
         :js_source_files =>                          # app javascript files to jumpstart dependency processing
                             [ 'public/javascripts/application.js', 'public/javascripts/*.js' ],
         
         :gem_asset_roots => [ '../public' ],         # location under $LOAD_PATHs to use as root for asset uris
         :gem_libraries   =>                          # location under $LOAD_PATHs to search for javascript libraries
-                            [ '../public/javascripts/*.js' ]
+                            [ '../public/javascripts/*.js' ],
+                            
+        :cache_root      => 'public',                # app directory to put cache files & digests in, should be webserver visible
+        :digest_basename => 'digest',                # file basename for css & js digests
+        :gem_excludes    => [ ]                      # patterns under $LOAD_PATHs to exclude from the manifest
       }
 
 
@@ -89,6 +93,7 @@ module Repertoire
       def reset!
         @source_files   = nil
         @libraries      = nil
+        @excludes       = nil
         @asset_roots    = nil
         @manifest       = nil
         @manifest_stamp = nil
@@ -139,7 +144,7 @@ module Repertoire
       def asset_roots
         unless @asset_roots
           @asset_roots = Processor.expand_paths($LOAD_PATH, @options[:gem_asset_roots])
-          @asset_roots << Processor.realpath(@options[:app_asset_root])
+          @asset_roots << Processor.realpath(@options[:cache_root])
         end
         
         @asset_roots
@@ -170,6 +175,26 @@ module Repertoire
         end
       
         @libraries
+      end
+      
+      
+      # Compute the basepaths for all excluded javascript libraries.
+      #
+      # ==== Returns
+      # :Array<String>:: 
+      #    The list of base paths
+      #
+      # ---
+      def excludes
+        unless @excludes
+          @excludes = []
+          @options[:gem_excludes].map do |libname|
+            libpath = libraries[libname]
+            @excludes << libpath.dirname + libname if libpath
+          end
+        end
+         
+        @excludes
       end
 
       
@@ -242,6 +267,12 @@ module Repertoire
       
         # only expand each source file once
         return if @manifest.include?(uri)
+        
+        # handle excluded libraries
+        if excludes.any? { |excluded| Processor.parent_path?(excluded, path) }
+          @logger.debug "Excluding #{'  '*level + uri} (#{Processor.pretty_path(path)})"
+          return
+        end
         
         @logger.debug "Requiring #{'  '*level + uri} (#{Processor.pretty_path(path)})"
       
@@ -351,6 +382,7 @@ module Repertoire
         # expand library and sublibrary references
         pathlist.gsub!( %r{^<([^/>]*)/?(.*)>} ) do
           libname, sublib = $1, $2
+          # determine library path
           unless libpath = libraries[libname]
             raise UnknownAssetError, libname
           end
@@ -473,11 +505,11 @@ module Repertoire
           end
 
           # the javascript source files must be located in the public app root to have valid uris        
-          options[:js_source_files].each do |f|
-            unless parent_path?(options[:app_asset_root], f)
-              raise Error, "Invalid configuration: #{f} must be under app asset root"
-            end
-          end
+          #options[:js_source_files].each do |f|
+          #  unless parent_path?(options[:cache_root], f)
+          #    raise Error, "Invalid configuration: #{f} must be under app asset root"
+          #  end
+          #end
         
           # the javascript libraries in gems must be located underneath gem asset roots to have valid uris
           options[:gem_libraries].each do |f|
