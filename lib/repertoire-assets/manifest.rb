@@ -141,7 +141,7 @@ module Repertoire
 
         # reference digest files when caching
         if @options[:precache_assets]
-          digest_uri = "#{path_prefix}#{@options[:digest_basename]}"
+          digest_uri = "#{path_prefix}/#{@options[:digest_basename]}"
           html << "<link rel='stylesheet' type='text/css' href='#{digest_uri}.css'/>"
           html << "<script language='javascript' type='text/javascript' src='#{digest_uri}.js'></script>"
         else
