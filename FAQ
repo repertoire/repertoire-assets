@@ -16,6 +16,15 @@ file. Consult the README.
 
 
 
+Q. I'm getting a Could not process '//= require <foo/bar>' error.  But foo is 
+listed as a known library!
+
+A. Are you also getting a "Multiple libraries for <foo>" warning?  If so, the
+one it's using doesn't provide the <foo/bar> sublibrary.  You can fix this by
+eliminating the spurious version of <foo>.
+
+
+
 Q. My HTML looks like the following, but the middleware is not expanding
 javascript require statements.
 

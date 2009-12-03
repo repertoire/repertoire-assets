@@ -168,7 +168,7 @@ module Repertoire
           paths.each do |path|
             lib = Processor.library_name(path)
             if @libraries[lib]
-              @logger.warn "Multiple libraries for <#{lib}>, using #{ Processor.pretty_path @load_paths[lib] }" 
+              @logger.warn "Multiple libraries for <#{lib}>, using #{ Processor.pretty_path @libraries[lib] } (other is #{ Processor.pretty_path path })" 
             end
             @libraries[lib] ||= path
           end
