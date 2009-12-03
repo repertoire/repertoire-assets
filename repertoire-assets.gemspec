@@ -46,7 +46,7 @@ Gem::Specification.new do |s|
 
     (1) Make sure your application loads the middleware. e.g. for Merb:
 
-        <app>/config/init.ru (Mongrel)
+        <app>/config/rack.rb (Mongrel)
         <app>/config.ru      (Passenger) 
 
         require 'repertoire-assets'
