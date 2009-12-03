@@ -564,7 +564,7 @@ module Repertoire
         # ---
         def pretty_path(path)
           # default: standard rubygems repository format
-          pretty = path.to_s[/.*\/gems\/([^\/]+)\//, 1]
+          pretty = path.to_s[/.*\/(gems|dirs)\/([^\/]+)\//, 2]
           pretty || path
         end
         
