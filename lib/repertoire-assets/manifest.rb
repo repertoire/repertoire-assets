@@ -112,7 +112,7 @@ module Repertoire
               @logger.debug "Interpolating manifest into #{@path_info}"
               "#{head}#{html_manifest}"
             end
-            yield prefix
+            yield "#{prefix}#{chunk}"
             prefix = nil                      # done interpolating
           end
         end

@@ -5,16 +5,17 @@
 
 Gem::Specification.new do |s|
   s.name = %q{repertoire-assets}
-  s.version = "0.1.3"
+  s.version = "0.1.6"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Christopher York"]
-  s.date = %q{2009-11-26}
+  s.date = %q{2009-12-17}
   s.description = %q{Repertoire Assets javascript and css distribution framework}
   s.email = %q{yorkc@mit.edu}
   s.extra_rdoc_files = [
     "LICENSE",
-     "README"
+     "README",
+     "TODO"
   ]
   s.files = [
     ".gitignore",
@@ -32,6 +33,7 @@ Gem::Specification.new do |s|
      "lib/repertoire-assets/manifest.rb",
      "lib/repertoire-assets/processor.rb",
      "lib/repertoire-assets/provides.rb",
+     "lib/repertoire-assets/tasks.rb",
      "repertoire-assets.gemspec",
      "templates/Rakefile",
      "vendor/yuicompressor-2.4.2.jar"
