@@ -19,8 +19,8 @@ module Repertoire
       COMPRESSOR_CMD  = "java -jar #{COMPRESSOR_PATH} --type %s --charset utf-8"
     
       # regular expression for HTML 4.0 DTD through the HTML & HEAD elements
-      HTML_HEAD       = /^(\s*<\s*!DOCTYPE[^>]*>)?\s*<\s*HTML[^>]*>\s*<\s*HEAD[^>]*>/im
-      HEADER_BUFFER   = 300                  # upper length limit for HTML_HEAD
+      HTML_HEAD       = %r{^(\s*<\s*!DOCTYPE[^>]*>)?\s*<\s*HTML[^>]*>\s*<\s*HEAD[^>]*>.*?(?=</\s*HEAD[^>]*>)}im
+      HEADER_BUFFER   = 1000                  # upper length limit for HTML_HEAD
     
       # Initialize the rack manifest middleware.
       #
