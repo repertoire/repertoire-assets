@@ -7,7 +7,7 @@ begin
     s.email = "yorkc@mit.edu"
     s.homepage = "http://github.com/repertoire/repertoire-assets"
     s.authors = ["Christopher York"]
-    s.add_dependency('rack', '~>1.0.1')
+    s.add_dependency('rack', '>=1.0.1')
     s.post_install_message = <<-POST_INSTALL_MESSAGE
   #{'*'*80}
     One of your gems uses Repertoire asset support, which provides access to
