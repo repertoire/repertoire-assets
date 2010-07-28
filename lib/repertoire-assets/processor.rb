@@ -3,14 +3,14 @@ require 'logger'
 module Repertoire
   module Assets
     class Processor
-      
+
       attr_accessor :manifest, :provided
 
       DEFAULT_OPTIONS = {
         :precache_assets     => nil,
         :compress_assets     => nil,
         :disable_rack_assets => nil,
-        
+
         :path_prefix     => '',                      # prefix to add before all urls
         :js_source_files =>                          # app javascript files to jumpstart dependency processing
                             [ 'public/javascripts/application.js', 'public/javascripts/*.js' ],
@@ -18,7 +18,7 @@ module Repertoire
         :gem_asset_roots => [ '../public' ],         # location under $LOAD_PATHs to use as root for asset uris
         :gem_libraries   =>                          # location under $LOAD_PATHs to search for javascript libraries
                             [ '../public/javascripts/*.js' ],
-                            
+
         :cache_root      => 'public',                # app directory to put cache files & digests in, should be webserver visible
         :digest_basename => 'digest',                # file basename for css & js digests
         :gem_excludes    => [ ]                      # patterns under $LOAD_PATHs to exclude from the manifest

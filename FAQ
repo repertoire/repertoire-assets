@@ -43,6 +43,15 @@ public/javascripts/application.js:
 
 
 
+Q. I have compress_assets set to true, but in my deployed application
+digest.js or digest.css aren't YUI compressed.
+
+A. You are probably using an uncompressable Javascript syntax. Try compressing
+by hand on the command-line and YUI compressor will give you an error
+statement. This should also appear in the application's log.
+
+
+
 Q. Can I use repertoire-assets together with merb-assets?
 
 A. Yes.  It replaces merb-asset's bundling and javascript/stylesheet helpers,
