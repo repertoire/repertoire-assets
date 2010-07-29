@@ -52,7 +52,7 @@ module Repertoire
       # (1) mime-type "text/html"
       # (2) contains a <head> element (i.e. not an ajax html fragment)
       #
-      # Currently, html manipulation is done using a simple HTML 4.0-compliant
+      # Currently, html manipulation is done using a basic HTML 4.0-compliant
       # filter parser.  It is simple and quite efficient.
       #
       # ---
@@ -108,13 +108,23 @@ module Repertoire
           else                                   # attempt to interpolate one time only
             # regular expression will match only "complete" html 4.0 documents
             # fragments and all others will pass through unchanged
-            prefix.gsub!(HTML_HEAD) do |head|
-              @logger.debug "Interpolating manifest into #{@path_info}"
-              "#{head}#{html_manifest}"
-            end
-            yield "#{prefix}#{chunk}"
-            prefix = nil                      # done interpolating
+            prefix << chunk
+            yield interpolate(prefix)
+            prefix = nil                         # done interpolating
           end
+        end
+        
+        # process single chunks
+        yield interpolate(prefix) unless prefix == nil
+      end
+
+
+      # If the manifest can be interpolated, then do so
+      #
+      def interpolate(text)
+        text.gsub(HTML_HEAD) do |head|
+          @logger.debug "Interpolating manifest into #{@path_info}"
+          "#{head}#{html_manifest}"
         end
       end
 
@@ -127,7 +137,7 @@ module Repertoire
       # execution during the evaluation of a <script> element, the files will load in
       # appropriate order.
       #
-      # If the :precache_assets option is selected, javascript and css will already
+      # If the :precache option is selected, javascript and css will already
       # exist in a digest at the application public root.  In this case, we only 
       # generate a single <script> and <link> for each digest file.
       #
@@ -140,7 +150,7 @@ module Repertoire
         path_prefix = @options[:path_prefix] || ''
 
         # reference digest files when caching
-        if @options[:precache_assets]
+        if @options[:precache]
           digest_uri = "#{path_prefix}/#{@options[:digest_basename]}"
           html << "<link rel='stylesheet' type='text/css' href='#{digest_uri}.css'/>"
           html << "<script language='javascript' type='text/javascript' src='#{digest_uri}.js'></script>"
@@ -178,7 +188,7 @@ module Repertoire
       # in gems and bundle them together into digest files stored at the application
       # public root.  Thereafter, the web server will serve them directly.
       #
-      # If the :compress_assets option is on, the YUI compressor is run on the
+      # If the :compress option is on, the YUI compressor is run on the
       # digest files.
       #
       # Urls in CSS files are rewritten to account for the file's new URI.
@@ -217,7 +227,7 @@ module Repertoire
           bundled = Manifest.bundle(uris, provided) do |*args|
             yield(*args) if block_given?
           end
-          bundled = Manifest.compress(bundled, type, @logger) if @options[:compress_assets]
+          bundled = Manifest.compress(bundled, type, @logger) if @options[:compress]
           f.write(bundled)
           @logger.info "Cached #{digest}"
         end
@@ -268,7 +278,7 @@ module Repertoire
         #  The compressed code, or source if compression failed
         # ---
         def compress(source, type, logger)
-          stream = StringIO.new(source)
+          stream = StringIO.new(source)          
           Open3.popen3(COMPRESSOR_CMD % type) do |stdin, stdout, stderr|
             begin
               while buffer = stream.read(4096)
@@ -276,12 +286,17 @@ module Repertoire
               end
               stdin.close
               compressed = stdout.read
-              raise "No result" if compressed.length == 0
+              
+              if !source.empty?
+                raise "No result" if compressed.empty?
+                ratio = 100.0 * (source.length - compressed.length) / source.length
+              end
               logger.info "Digest #{type} compression %i%% to (%ik)" % 
-                                     [ 100.0 * (source.length - compressed.length) / source.length, compressed.length / 1024 ]
+                                     [ratio || 0, compressed.length / 1024 ]
+
               return compressed
             rescue Exception => e
-              logger.warn("Could not compress: #{e.message} (using #{COMPRESSOR_CMD})")
+              logger.warn("Could not compress: #{e.message} (using #{COMPRESSOR_CMD % type})")
               logger.warn(stderr.read)
               logger.warn("Reverting to uncompressed digest")
               return source
