@@ -1,19 +1,35 @@
 Repertoire Assets
 =================
 
-(1) Make sure your application loads the middleware. e.g. for Merb:
 
-    <app>/config/rack.rb (Mongrel)
-    <app>/config.ru      (Passenger) 
-  
-*    require 'repertoire-assets'
-*    use Repertoire::Assets::Processor, Merb::Config, Merb.logger
+(1) Make sure your application loads the middleware.  For Rails 3.0,
+    including repertoire-assets in your Gemfile does this automatically.
     
-    run Merb::Rack::Application.new
+	For Merb and others, you will need to alter your rackup file.  The
+	middleware takes two optional arguments: a configuration hash and
+	the system logger.
+
+      <app>/config/rack.rb (Mongrel)
+      <app>/config.ru      (Passenger) 
+  
+*        require 'repertoire-assets'
+*        use Repertoire::Assets::Processor, Merb::Config, Merb.logger
+    
+         run Merb::Rack::Application.new
+
 
 (2) Turn on precaching and compression in your production environment,
-    so gem assets are served by your web server. e.g. for Merb:
+    so gem assets are served by your web server. e.g. for Rails:
   
     <app>/config/environments/production.rb:
   
-*    c[:compress_assets] = true
+*        config.repertoire_assets.compress = true
+
+    Or in Merb:
+  
+    <app>/config/environments/production.rb:
+
+*        c[:compress] = true
+
+    For other options that can be used in the configuration hash, see the
+    documentation for Repertoire::Assets::Processor.

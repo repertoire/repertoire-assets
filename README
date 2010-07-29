@@ -45,8 +45,8 @@ sourced, it is not loaded again.
 This is accomplished by compiling an ordered manifest of all the javascript
 files required by your code, and then inserting the appropriate <script> and
 <link> tags into your pages' html. Because it uses a rack filter, the system
-is largely transparent to your application. Whether it's written in Merb,
-Rails, Sinatra, or another ruby web framework, the javascript and css will
+is largely transparent to your application. Whether it's written in Rails,
+Merb, Sinatra, or another ruby web framework, the javascript and css will
 still work.
 
 
@@ -61,30 +61,15 @@ can, and cache them in your application's public asset directory.
 *Preparing your application*
 
 You can use javascript components packaged with Repertoire Assets in any ruby
-web application based on Rack (this includes Merb, Rails, Sinatra and others).
+web application based on Rack (this includes Rails, Merb, Sinatra and others).
 
 The javascript gem libraries can either be bundled with your application, or
 reside in the system rubygems repository. Likewise, the repertoire-assets gem
 may be in either place.
 
-Three lines of configuration are required.
-
-(1) Make sure your application loads the middleware. e.g. for Merb:
-
-    <app>/config/rack.rb (Mongrel)
-    <app>/config.ru      (Passenger) 
-  
-*    require 'repertoire-assets'
-*    use Repertoire::Assets::Processor, Merb::Config, Merb.logger
-    
-    run Merb::Rack::Application.new
-
-(2) Turn on precaching and compression in your production environment,
-    so gem assets are served by your web server. e.g. for Merb:
-  
-    <app>/config/environments/production.rb:
-  
-*    c[:compress_assets] = true
+For Rails 3.0, no configuration is necessary for development use.  Production
+environments require a single line of configuration.  See the INSTALL file
+for details.
 
 
 
@@ -192,8 +177,8 @@ named after your library (e.g. /images/superdraw/circle.png rather than
 For security reasons, the system will never serve a file that was not
 explicitly required or provided.
 
-A template for your own gems' Rakefile, based on jeweler, is distributed in
-repertoire-assets/templates/Rakefile.  Copy it out and modify as necessary.
+If you are using Rails and would like to preview the manifest or generate
+digests by hand, use 'rake assets:list' and 'rake assets:build'.
 
 
 
@@ -224,55 +209,26 @@ the conflict and told which one is being used.
 
 The following options are available for production configurations.
 
-   :precache_assets [false]                   # copy and bundle assets into host application?
-   :compress_assets [false]                   # compress bundled javascript & stylesheets? (implies :precache)
-   :disable_rack_assets [false]               # don't interpolate <script> and <link> tags
-   :path_prefix     ['']                      # prefix for all generated urls
+   - precache [false]                   # copy and bundle assets into host application?
+   - compress [false]                   # compress bundled javascript & stylesheets? (implies :precache)
+   - disable_rack_assets [false]               # don't interpolate <script> and <link> tags
+   - path_prefix     ['']                      # prefix for all generated urls
 
-In general, :compress_assets is preferred. This copies all binary assets into
+In general, 'compress' is preferred. This copies all binary assets into
 your host application, bundles together all required javascript and css into
 files named '/digest.js' and '/digest.css', and compresses these files using
-YUI compressor.  Use :precache_assets if you do not want to compress the files.
+YUI compressor.  Use 'precache' if you do not want to compress the files.
 
 In both cases, the asset mirroring middleware is disabled, and your app's
 webserver serves all assets directly from the filesystem.
 
 If desired, you may also disable the <script> and <link> middleware in your
 production install while still precaching and compressing all assets. Set the
-:disable_rack_assets configuration option to true, and add the following to
+'disable_rack_assets' configuration option to true, and add the following to
 your html header:
 
 <link rel='stylesheet' type='text/css' href='/digest.css'/> 
 <script language='javascript' type='text/javascript' src='/digest.js'></script>
 
-Note, however, that the server performance gain from :disable_rack_assets is
+Note, however, that the server performance gain from 'disable_rack_assets' is
 minimal.
-
-
-* Using Repertoire Assets as a Build Tool *
-
-If you want to build your assets for use outside of ruby applications, you can
-use the repertoire assets' rake tasks to generate a set of bundled standalone 
-files.  First, import the rake tasks into your gem's Rakefile:
-
-... [ ./Rakefile ]
-begin
-  require 'repertoire-assets'
-  Repertoire::Assets::Tasks.new(:gem_excludes => ["jquery", ...])            # list any libraries to distribute separately here
-rescue LoadError
-  puts "Repertoire assets not available.  Install it with: sudo gem install repertoire-assets"
-end
-...
-
-Then you can build a bundled and compressed directory of assets for your 
-component with:
-
-# rake assets:build
-
-This gives you the flexibility of developing and deploying components that use
-javascript dependencies and version management for use within ruby frameworks,
-but also distributing your code for a wider audience.
-
-The gem_excludes option allow you to list of required javascript libraries NOT to 
-bundle into your distribution directory for legal reasons.  You may also supply
-any of the other the other standard repertoire-assets options.

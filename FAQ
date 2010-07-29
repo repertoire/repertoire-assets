@@ -12,7 +12,9 @@ Q. My application is not loading javascript or css files.  There is nothing
 about them in the log.
 
 A. You have not installed the Rack middleware in your application's rackup
-file. Consult the README.
+file. The middleware is automatically loaded for Rails 3.0 when you add
+repertoire-assets to your Gemfile - but not for other frameworks.  Consult
+the README.
 
 
 
@@ -43,20 +45,13 @@ public/javascripts/application.js:
 
 
 
-Q. I have compress_assets set to true, but in my deployed application
+Q. I have compress set to true, but in my deployed application
 digest.js or digest.css aren't YUI compressed.
 
 A. You are probably using an uncompressable Javascript syntax. Try compressing
 by hand on the command-line and YUI compressor will give you an error
 statement. This should also appear in the application's log.
-
-
-
-Q. Can I use repertoire-assets together with merb-assets?
-
-A. Yes.  It replaces merb-asset's bundling and javascript/stylesheet helpers,
-but the remaining helpers can be used with assets from either the main app or
-assets in gems.  (See below.)
+[ If using Rails 3, use rake 'assets:build' to compress the files by hand. ]
 
 
 
@@ -67,7 +62,7 @@ A. So that gems can specify in which directory in the host application they
 appear.  e.g., 'foo_gem-0.0.1/public/images/foo/bar.png' is served as though it
 were '<host app>/public/images/foo/bar.png'. 
 
-This way, existing img_tag and other helpers in merb/rails can be used 
+This way, existing image_tag and other helpers in Rails can be used 
 with assets pulled from gems.
 
 
@@ -78,9 +73,18 @@ or different browsers.
 A. This was considered, but isn't implemented.  Issue a feature request.
 
 
+
 Q. Repertoire assets seems like sprockets or juicer.  How is it different?
 
 A. Only Repertoire assets addresses distributing javascript and css via
 rubygems. Its syntax is borrowed from sprockets, but it has better css support
 than sprockets, and better provisions for debugging than either since you can
 develop on unbundled source files.
+
+
+
+Q. Can I use repertoire-assets together with merb-assets?
+
+A. Yes.  It replaces merb-asset's bundling and javascript/stylesheet helpers,
+but the remaining helpers can be used with assets from either the main app or
+assets in gems.

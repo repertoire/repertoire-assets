@@ -7,8 +7,8 @@ module Repertoire
       attr_accessor :manifest, :provided
 
       DEFAULT_OPTIONS = {
-        :precache_assets     => nil,
-        :compress_assets     => nil,
+        :precache     => nil,
+        :compress     => nil,
         :disable_rack_assets => nil,
 
         :path_prefix     => '',                      # prefix to add before all urls
@@ -41,8 +41,8 @@ module Repertoire
       #
       # Common settings and defaults
       #
-      #   :precache_assets [false]                   # copy and bundle assets into host application?
-      #   :compress_assets [false]                   # compress bundled javascript & stylesheets? (implies :precache)
+      #   :precache [false]                   # copy and bundle assets into host application?
+      #   :compress [false]                   # compress bundled javascript & stylesheets? (implies :precache)
       #   :disable_rack_assets [false]               # don't interpolate <script> and <link> tags (implies :precache)
       #   :path_prefix     ['']                      # prefix for all generated urls
       #  
@@ -63,7 +63,7 @@ module Repertoire
         reset!
 
         # if requested, cache assets in app's public directory at startup
-        @provider.precache! && @manifester.precache! if @options[:precache_assets]
+        @provider.precache! && @manifester.precache! if @options[:precache]
       end
 
 
@@ -77,7 +77,7 @@ module Repertoire
       def call(env)
         delegate = case
           when @options[:disable_rack_assets]  then @app              # ignore all asset middleware
-          when @options[:precache_assets] then @manifester       # use manifest middleware only
+          when @options[:precache] then @manifester       # use manifest middleware only
           else                                 
             reset! if stale?                                     
             @provider                                            # use provider + manifest middleware
@@ -499,9 +499,9 @@ module Repertoire
           raise Error, "No load paths are available" unless $LOAD_PATH
         
           # precaching must be turned on in order to compress
-          if options[:compress_assets]
-            raise Error, "Must select asset precaching for compression" if options[:precache_assets] == false
-            options[:precache_assets] = true
+          if options[:compress]
+            raise Error, "Must select asset precaching for compression" if options[:precache] == false
+            options[:precache] = true
           end
 
           # the javascript source files must be located in the public app root to have valid uris        

@@ -1,5 +1,9 @@
 - tainted files need to check css
 
+- rails3. rework rake tasks to use Rails configuration	DONE
+- rails3. use middleware automatically via a railtie	DONE
+- rails3. use rails-style gemspec configuration			DONE 
+
 - create digests based on the gem name for asset builds DONE
 - test exclude functionality                        DONE
 - test asset build config                           DONE

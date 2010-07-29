@@ -1,3 +1,34 @@
+* Using Repertoire Assets as a Build Tool *
+
+If you want to build your assets for use outside of ruby applications, you can
+use the repertoire assets' rake tasks to generate a set of bundled standalone 
+files.  First, import the rake tasks into your gem's Rakefile:
+
+... [ ./Rakefile ]
+begin
+  require 'repertoire-assets'
+  Repertoire::Assets::Tasks.new(:gem_excludes => ["jquery", ...])            # list any libraries to distribute separately here
+rescue LoadError
+  puts "Repertoire assets not available.  Install it with: sudo gem install repertoire-assets"
+end
+...
+
+Then you can build a bundled and compressed directory of assets for your 
+component with:
+
+# rake assets:build
+
+This gives you the flexibility of developing and deploying components that use
+javascript dependencies and version management for use within ruby frameworks,
+but also distributing your code for a wider audience.
+
+The gem_excludes option allow you to list of required javascript libraries NOT to 
+bundle into your distribution directory for legal reasons.  You may also supply
+any of the other the other standard repertoire-assets options.
+
+[ since the Rake tasks now require Rails, this use case is less useful ]
+
+
 /* Repertoire gem assets manifest file */
 (function() {
   

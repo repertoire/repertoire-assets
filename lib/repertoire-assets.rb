@@ -6,4 +6,6 @@ require dir + 'exceptions'
 require dir + 'manifest'
 require dir + 'provides'
 require dir + 'processor'
-require dir + 'tasks'
+require dir + 'version'
+
+require dir + 'railtie' if defined?(Rails)
