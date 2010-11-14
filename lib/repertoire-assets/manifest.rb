@@ -297,7 +297,8 @@ module Repertoire
               return compressed
             rescue Exception => e
               logger.warn("Could not compress: #{e.message} (using #{COMPRESSOR_CMD % type})")
-              logger.warn(stderr.read)
+# CWY 13/11/2010.  Obscure errors with OS X new Java install hanging here...
+#              logger.warn(stderr.read)
               logger.warn("Reverting to uncompressed digest")
               return source
             end            
